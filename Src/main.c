@@ -41,6 +41,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 TIM_HandleTypeDef htim1;
+TIM_HandleTypeDef htim2;
 
 UART_HandleTypeDef huart3;
 
@@ -54,6 +55,7 @@ PCD_HandleTypeDef hpcd_USB_OTG_FS;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_TIM1_Init(void);
+static void MX_TIM2_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_USB_OTG_FS_PCD_Init(void);
 /* USER CODE BEGIN PFP */
@@ -71,6 +73,13 @@ static void MX_USB_OTG_FS_PCD_Init(void);
 #define DIR_PORT_Y GPIOF
 #define STEP_PIN_Y GPIO_PIN_15
 #define STEP_PORT_Y GPIOD
+
+// Function to set servo angle
+void Set_Servo_Angle(TIM_HandleTypeDef *htim, uint32_t channel, uint8_t angle)
+{
+    uint32_t pulse = 500 + (angle * (2500 - 500) / 180);
+    __HAL_TIM_SET_COMPARE(htim, channel, pulse);
+}
 
 void microDelay (uint16_t delay)
 {
@@ -132,6 +141,8 @@ int main(void)
   MX_USART3_UART_Init();
   MX_USB_OTG_FS_PCD_Init();
   /* USER CODE BEGIN 2 */
+  // Start the PWM signal generation
+  	 HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
   // 1. Start the Timer hardware so microDelay works
     HAL_TIM_Base_Start(&htim1);
 
@@ -157,6 +168,20 @@ int main(void)
 	step_X(200, 1, 2000);
 	step_Y(200, 1, 2000);
 	HAL_Delay(1000);
+
+// Sweep servo from 0 to 180 degrees
+	  for (uint8_t angle = 0; angle <= 180; angle += 10)
+	  {
+		  Set_Servo_Angle(&htim2, TIM_CHANNEL_1, angle);
+		  HAL_Delay(100);
+	  }
+
+	  // Sweep back from 180 to 0 degrees
+	  for (uint8_t angle = 180; angle > 0; angle -= 10)
+	  {
+		  Set_Servo_Angle(&htim2, TIM_CHANNEL_1, angle);
+		  HAL_Delay(100);
+	  }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -246,6 +271,47 @@ static void MX_TIM1_Init(void)
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM1_Init 2 */
+
+  /* USER CODE END TIM1_Init 2 */
+
+}
+
+static void MX_TIM2_Init(void)
+{
+
+  /* USER CODE BEGIN TIM1_Init 0 */
+
+  /* USER CODE END TIM1_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM1_Init 1 */
+
+  /* USER CODE END TIM1_Init 1 */
+  htim2.Instance = TIM2;
+  htim2.Init.Prescaler = 168-1;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = 65535;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim2.Init.RepetitionCounter = 0;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
   {
     Error_Handler();
   }
