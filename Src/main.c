@@ -62,10 +62,15 @@ static void MX_USB_OTG_FS_PCD_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-#define DIR_PIN GPIO_PIN_15
-#define DIR_PORT GPIOF
-#define STEP_PIN GPIO_PIN_13
-#define STEP_PORT GPIOE
+#define DIR_PIN_X GPIO_PIN_15
+#define DIR_PORT_X GPIOF
+#define STEP_PIN_X GPIO_PIN_13
+#define STEP_PORT_X GPIOE
+
+#define DIR_PIN_Y GPIO_PIN_12
+#define DIR_PORT_Y GPIOF
+#define STEP_PIN_Y GPIO_PIN_15
+#define STEP_PORT_Y GPIOD
 
 void microDelay (uint16_t delay)
 {
@@ -73,12 +78,22 @@ void microDelay (uint16_t delay)
   while (__HAL_TIM_GET_COUNTER(&htim1) < delay);
 }
 
-void step (int steps, uint8_t direction, uint16_t delay) {
-  HAL_GPIO_WritePin(DIR_PORT, DIR_PIN, direction ? GPIO_PIN_SET : GPIO_PIN_RESET);
+void step_X (int steps, uint8_t direction, uint16_t delay) {
+  HAL_GPIO_WritePin(DIR_PORT_X, DIR_PIN_X, direction ? GPIO_PIN_SET : GPIO_PIN_RESET);
   for(int x=0; x<steps; x++) {
-    HAL_GPIO_WritePin(STEP_PORT, STEP_PIN, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(STEP_PORT_X, STEP_PIN_X, GPIO_PIN_SET);
     microDelay(10); // Fixed short pulse
-    HAL_GPIO_WritePin(STEP_PORT, STEP_PIN, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(STEP_PORT_X, STEP_PIN_X, GPIO_PIN_RESET);
+    microDelay(delay); // Speed control
+  }
+}
+
+void step_Y (int steps, uint8_t direction, uint16_t delay) {
+  HAL_GPIO_WritePin(DIR_PORT_Y, DIR_PIN_Y, direction ? GPIO_PIN_SET : GPIO_PIN_RESET);
+  for(int x=0; x<steps; x++) {
+    HAL_GPIO_WritePin(STEP_PORT_Y, STEP_PIN_Y, GPIO_PIN_SET);
+    microDelay(10); // Fixed short pulse
+    HAL_GPIO_WritePin(STEP_PORT_Y, STEP_PIN_Y, GPIO_PIN_RESET);
     microDelay(delay); // Speed control
   }
 }
@@ -121,7 +136,7 @@ int main(void)
     HAL_TIM_Base_Start(&htim1);
 
     // 2. Bring PD14 HIGH to wake up the A4988 driver
-    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_RESET);
 
     // Give the driver a tiny moment to wake up
     HAL_Delay(10);
@@ -132,13 +147,15 @@ int main(void)
   while (1)
   {
     int y;
-    for(y=0; y<8; y=y+1) // 8 times
+    for(y=0; y<200; y=y+1) // 8 times
     {
-      step(25, 0, 800); // 25 steps (45 degrees) CCV
-      HAL_Delay(500);
+      step_X(1, 0, 800); // 25 steps (45 degrees) CCV
+      step_Y(1, 0, 800);
+      HAL_Delay(100);
     }
     // 2000 microsecond delay is much slower and has higher torque
-	step(200, 1, 2000);
+	step_X(200, 1, 2000);
+	step_Y(200, 1, 2000);
 	HAL_Delay(1000);
     /* USER CODE END WHILE */
 
