@@ -1,0 +1,13 @@
+../Core/Src/main.c:85:6:Set_Servo_Angle	4
+../Core/Src/main.c:91:6:microDelay	2
+../Core/Src/main.c:97:6:step_X	2
+../Core/Src/main.c:107:6:step_Y	2
+../Core/Src/main.c:122:5:main	4
+../Core/Src/main.c:214:6:SystemClock_Config	3
+../Core/Src/main.c:261:13:MX_I2C2_Init	2
+../Core/Src/main.c:295:13:MX_TIM1_Init	4
+../Core/Src/main.c:341:13:MX_TIM2_Init	6
+../Core/Src/main.c:400:13:MX_USART3_UART_Init	2
+../Core/Src/main.c:433:13:MX_USB_OTG_FS_PCD_Init	2
+../Core/Src/main.c:468:13:MX_GPIO_Init	1
+../Core/Src/main.c:570:6:Error_Handler	1

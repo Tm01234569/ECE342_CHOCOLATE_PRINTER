@@ -1,0 +1,26 @@
+!SESSION 2026-03-16 14:41:41.069 -----------------------------------------------
+eclipse.buildId=Version 2.0.0
+java.version=21.0.8
+java.vendor=Eclipse Adoptium
+BootLoader constants: OS=macosx, ARCH=x86_64, WS=cocoa, NL=en_PH
+Framework arguments:  -keyring /Users/tomotakashinozaki/.eclipse_keyring
+Command-line arguments:  -os macosx -ws cocoa -arch x86_64 -keyring /Users/tomotakashinozaki/.eclipse_keyring
+
+!ENTRY com.st.stm32cube.ide.mcu.informationcenter 1 1 2026-03-16 14:42:23.502
+!MESSAGE Log4j2 initialized with config file /Users/tomotakashinozaki/Desktop/ECE342_CHOCOLATE_PRINTER/CHOCOLATE_PRINTER/.metadata/.log4j2.xml
+
+!ENTRY com.st.stm32cube.ide.mcu.ide 1 1 2026-03-16 14:42:28.667
+!MESSAGE Started RMI Server, listening on port 41337
+!SESSION 2026-03-16 15:05:00.495 -----------------------------------------------
+eclipse.buildId=Version 2.0.0
+java.version=21.0.8
+java.vendor=Eclipse Adoptium
+BootLoader constants: OS=macosx, ARCH=x86_64, WS=cocoa, NL=en_PH
+Framework arguments:  -keyring /Users/tomotakashinozaki/.eclipse_keyring
+Command-line arguments:  -os macosx -ws cocoa -arch x86_64 -keyring /Users/tomotakashinozaki/.eclipse_keyring
+
+!ENTRY com.st.stm32cube.ide.mcu.informationcenter 1 1 2026-03-16 15:05:11.907
+!MESSAGE Log4j2 initialized with config file /Users/tomotakashinozaki/Desktop/ECE342_CHOCOLATE_PRINTER/CHOCOLATE_PRINTER/.metadata/.log4j2.xml
+
+!ENTRY com.st.stm32cube.ide.mcu.ide 1 1 2026-03-16 15:05:17.029
+!MESSAGE Started RMI Server, listening on port 41337
