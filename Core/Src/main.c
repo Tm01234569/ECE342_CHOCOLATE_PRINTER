@@ -81,6 +81,14 @@ static void MX_I2C2_Init(void);
 #define STEP_PIN_Y GPIO_PIN_15
 #define STEP_PORT_Y GPIOD
 
+#define DIR_PIN_EXTRUDE GPIO_PIN_12
+#define DIR_PORT_EXTRUDE GPIOE
+#define STEP_PIN_EXTRUDE GPIO_PIN_10
+#define STEP_PORT_EXTRUDE GPIOE
+
+#define ENDSTOPPER_PIN_INPUT_X GPIO_PIN_14
+#define ENDSTOPPER_PORT_INPUT_X GPIOE
+
 // Function to set servo angle
 void Set_Servo_Angle(TIM_HandleTypeDef *htim, uint32_t channel, uint8_t angle)
 {
@@ -95,13 +103,20 @@ void microDelay (uint16_t delay)
 }
 
 void step_X (int steps, uint8_t direction, uint16_t delay) {
-  HAL_GPIO_WritePin(DIR_PORT_X, DIR_PIN_X, direction ? GPIO_PIN_SET : GPIO_PIN_RESET);
-  for(int x=0; x<steps; x++) {
-    HAL_GPIO_WritePin(STEP_PORT_X, STEP_PIN_X, GPIO_PIN_SET);
-    microDelay(10); // Fixed short pulse
-    HAL_GPIO_WritePin(STEP_PORT_X, STEP_PIN_X, GPIO_PIN_RESET);
-    microDelay(delay); // Speed control
-  }
+ // Set the motor direction
+ HAL_GPIO_WritePin(DIR_PORT_X, DIR_PIN_X, direction ? GPIO_PIN_SET : GPIO_PIN_RESET);
+ for(int x = 0; x < steps; x++) {
+   // Check if the endstopper is triggered (1)
+   if (HAL_GPIO_ReadPin(ENDSTOPPER_PORT_INPUT_X, ENDSTOPPER_PIN_INPUT_X) == GPIO_PIN_SET) {
+     // Exit the loop immediately to stop movement
+     break;
+   }
+   // Standard pulse sequence
+   HAL_GPIO_WritePin(STEP_PORT_X, STEP_PIN_X, GPIO_PIN_SET);
+   microDelay(10);
+   HAL_GPIO_WritePin(STEP_PORT_X, STEP_PIN_X, GPIO_PIN_RESET);
+   microDelay(delay);
+ }
 }
 
 void step_Y (int steps, uint8_t direction, uint16_t delay) {
@@ -185,20 +200,9 @@ int main(void)
 	step_X(200, 1, 2000);
 	step_Y(200, 1, 2000);
 	HAL_Delay(1000);
-
-// Sweep servo from 0 to 180 degrees
-	  for (uint8_t angle = 0; angle <= 180; angle += 10)
-	  {
-		  Set_Servo_Angle(&htim2, TIM_CHANNEL_1, angle);
-		  HAL_Delay(100);
-	  }
-
-	  // Sweep back from 180 to 0 degrees
-	  for (uint8_t angle = 180; angle > 0; angle -= 10)
-	  {
-		  Set_Servo_Angle(&htim2, TIM_CHANNEL_1, angle);
-		  HAL_Delay(100);
-	  }
+	step_EXTRUDE(1500, 1, 2000);
+	HAL_Delay(1000);
+	step_EXTRUDE(1500, 0, 2000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
