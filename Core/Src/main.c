@@ -128,6 +128,16 @@ void step_Y (int steps, uint8_t direction, uint16_t delay) {
     microDelay(delay); // Speed control
   }
 }
+
+void step_EXTRUDE (int steps, uint8_t direction, uint16_t delay) {
+  HAL_GPIO_WritePin(DIR_PORT_EXTRUDE, DIR_PIN_EXTRUDE, direction ? GPIO_PIN_SET : GPIO_PIN_RESET);
+  for(int x=0; x<steps; x++) {
+    HAL_GPIO_WritePin(STEP_PORT_EXTRUDE, STEP_PIN_EXTRUDE, GPIO_PIN_SET);
+    microDelay(10); // Fixed short pulse
+    HAL_GPIO_WritePin(STEP_PORT_EXTRUDE, STEP_PIN_EXTRUDE, GPIO_PIN_RESET);
+    microDelay(delay); // Speed control
+  }
+}
 /* USER CODE END 0 */
 
 /**
