@@ -19,7 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-#include "ssd1306.h"
+#include "image_data.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -47,8 +47,6 @@ I2C_HandleTypeDef hi2c2;
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
 
-I2C_HandleTypeDef hi2c2;
-
 UART_HandleTypeDef huart3;
 
 PCD_HandleTypeDef hpcd_USB_OTG_FS;
@@ -75,6 +73,12 @@ static void MX_I2C2_Init(void);
 #define DIR_PORT_X GPIOF
 #define STEP_PIN_X GPIO_PIN_13
 #define STEP_PORT_X GPIOE
+#define MS1_PORT_X GPIOF
+#define MS1_PIN_X GPIO_PIN_13
+#define MS2_PORT_X GPIOE
+#define MS2_PIN_X GPIO_PIN_9
+#define MS3_PORT_X GPIOE
+#define MS3_PIN_X GPIO_PIN_11
 
 #define DIR_PIN_Y GPIO_PIN_12
 #define DIR_PORT_Y GPIOF
@@ -88,6 +92,9 @@ static void MX_I2C2_Init(void);
 
 #define ENDSTOPPER_PIN_INPUT_X GPIO_PIN_14
 #define ENDSTOPPER_PORT_INPUT_X GPIOE
+
+#define ENDSTOPPER_PIN_INPUT_Y GPIO_PIN_15
+#define ENDSTOPPER_PORT_INPUT_Y GPIOE
 
 // Function to set servo angle
 void Set_Servo_Angle(TIM_HandleTypeDef *htim, uint32_t channel, uint8_t angle)
@@ -122,10 +129,15 @@ void step_X (int steps, uint8_t direction, uint16_t delay) {
 void step_Y (int steps, uint8_t direction, uint16_t delay) {
   HAL_GPIO_WritePin(DIR_PORT_Y, DIR_PIN_Y, direction ? GPIO_PIN_SET : GPIO_PIN_RESET);
   for(int x=0; x<steps; x++) {
+	  // Check if the endstopper is triggered (1)
+	  if (HAL_GPIO_ReadPin(ENDSTOPPER_PORT_INPUT_Y, ENDSTOPPER_PIN_INPUT_Y) == GPIO_PIN_SET) {
+	  // Exit the loop immediately to stop movement
+	  break;
+	 }
     HAL_GPIO_WritePin(STEP_PORT_Y, STEP_PIN_Y, GPIO_PIN_SET);
     microDelay(10); // Fixed short pulse
     HAL_GPIO_WritePin(STEP_PORT_Y, STEP_PIN_Y, GPIO_PIN_RESET);
-    microDelay(delay); // Speed control
+    microDelay(delay); // Speed controlstep_X(1, 0, 10);
   }
 }
 
@@ -183,40 +195,81 @@ int main(void)
     // 2. Bring PD14 HIGH to wake up the A4988 driver
     HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_RESET);
 
+    // Initialize all MS to high
+//    HAL_GPIO_WritePin(MS1_PORT_X, MS1_PIN_X, GPIO_PIN_SET);
+//    HAL_GPIO_WritePin(MS2_PORT_X, MS2_PIN_X, GPIO_PIN_SET);
+//    HAL_GPIO_WritePin(MS3_PORT_X, MS3_PIN_X, GPIO_PIN_SET);
+
+
     // Give the driver a tiny moment to wake up
     HAL_Delay(10);
   /* USER CODE END 2 */
-
-    // I2C Init
-    SSD1306_Init();
-    SSD1306_Clear();
-    OLED_ShowProgress(0);
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    int y;
-    for(y=0; y<50; y=y+1) // 8 times
-    {
-      step_X(1, 0, 800); // 25 steps (45 degrees) CCV
-      step_Y(1, 0, 800);
+//    int y;
+//    for(y=0; y<50; y=y+1) // y times
+//    {
+//      step_X(1, 0, 10);
+//      step_Y(1, 0, 10);
+//
+//      OLED_ShowProgress((y + 1) * 100 / 50);
+//
+//      HAL_Delay(10);
+//    }
+//    // 2000 microsecond delay is much slower and has higher torque
+//	step_X(50, 1, 2000);
+//	step_Y(50, 1, 2000);
+//	HAL_Delay(1000);
+//	//step_EXTRUDE(1500, 1, 2000);
+//	HAL_Delay(1000);
+//	//step_EXTRUDE(1500, 0, 2000);
+//    /* USER CODE END WHILE */
+//
+//    /* USER CODE BEGIN 3 */
+//	  OLED_ShowProgress(0);
 
-      OLED_ShowProgress((y + 1) * 100 / 50);
 
-      HAL_Delay(100);
-    }
-    // 2000 microsecond delay is much slower and has higher torque
-	step_X(200, 1, 2000);
-	step_Y(200, 1, 2000);
-	HAL_Delay(1000);
-	step_EXTRUDE(1500, 1, 2000);
-	HAL_Delay(1000);
-	step_EXTRUDE(1500, 0, 2000);
-    /* USER CODE END WHILE */
+	  // Test row by row
+	  for (int y = 0; y < IMAGE_HEIGHT; y++)
+	      {
+	          for (int x = 0; x < IMAGE_WIDTH; x++)
+	          {
+	              // Check current pixel
+	              if (image_data[y][x] == 1)
+	              {
+	                  step_EXTRUDE(5, 1, 20000);
+	              }
 
-    /* USER CODE BEGIN 3 */
-	  OLED_ShowProgress(0);
+	              // Move right, but not after the last pixel in the row
+	              if (x < IMAGE_WIDTH - 1)
+	              {
+	                  step_X(5, 0, 20000);   // 5 steps = 1 pixel in X
+	                  HAL_Delay(10);
+	              }
+	          }
+
+	          // If not the last row, return to left and move down
+	          if (y < IMAGE_HEIGHT - 1)
+	          {
+	              HAL_Delay(1000);
+
+	              // Return to left side
+	              step_X((IMAGE_WIDTH - 1) * 5, 1, 10000);
+	              HAL_Delay(500);
+
+	              // Move down by 1 pixel in Y
+	              step_Y(10, 0, 20000);
+	              HAL_Delay(500);
+	          }
+
+	          OLED_ShowProgress((y + 1) * 100 / IMAGE_HEIGHT);
+	      }
+
+	      HAL_Delay(1000);
+	      OLED_ShowProgress(0);
   }
   /* USER CODE END 3 */
 }
@@ -506,7 +559,8 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOF, GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9|GPIO_PIN_11|GPIO_PIN_13, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9|GPIO_PIN_10|GPIO_PIN_11|GPIO_PIN_12
+                          |GPIO_PIN_13, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14|GPIO_PIN_15, GPIO_PIN_RESET);
@@ -541,11 +595,19 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PE9 PE11 PE13 */
-  GPIO_InitStruct.Pin = GPIO_PIN_9|GPIO_PIN_11|GPIO_PIN_13;
+  /*Configure GPIO pins : PE9 PE10 PE11 PE12
+                           PE13 */
+  GPIO_InitStruct.Pin = GPIO_PIN_9|GPIO_PIN_10|GPIO_PIN_11|GPIO_PIN_12
+                          |GPIO_PIN_13;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PE14 PE15 */
+  GPIO_InitStruct.Pin = GPIO_PIN_14|GPIO_PIN_15;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PD14 PD15 */

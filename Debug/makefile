@@ -60,8 +60,8 @@ all: main-build
 main-build: CHOCOLATE_PRINTER.elf secondary-outputs
 
 # Tool invocations
-CHOCOLATE_PRINTER.elf CHOCOLATE_PRINTER.map: $(OBJS) $(USER_OBJS) C:\UOFT\Y3\ Winter\ECE342\Project\CHOCOLATE_PRINTER\CHOCOLATE_PRINTER\STM32F446ZETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "CHOCOLATE_PRINTER.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\UOFT\Y3 Winter\ECE342\Project\CHOCOLATE_PRINTER\CHOCOLATE_PRINTER\STM32F446ZETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="CHOCOLATE_PRINTER.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+CHOCOLATE_PRINTER.elf CHOCOLATE_PRINTER.map: $(OBJS) $(USER_OBJS) C:\UOFT\Y3\ Winter\ECE342\Project\CHOCOLATE_PRINTER\Chocolate\ Printer\ Project\ECE342_CHOCOLATE_PRINTER\STM32F446ZETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "CHOCOLATE_PRINTER.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\UOFT\Y3 Winter\ECE342\Project\CHOCOLATE_PRINTER\Chocolate Printer Project\ECE342_CHOCOLATE_PRINTER\STM32F446ZETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="CHOCOLATE_PRINTER.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
