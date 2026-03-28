@@ -117,10 +117,10 @@ void step_X (int steps, uint8_t direction, uint16_t delay) {
  HAL_GPIO_WritePin(DIR_PORT_X, DIR_PIN_X, direction ? GPIO_PIN_SET : GPIO_PIN_RESET);
  for(int x = 0; x < steps; x++) {
    // Check if the endstopper is triggered (1)
-   if (HAL_GPIO_ReadPin(ENDSTOPPER_PORT_INPUT_X, ENDSTOPPER_PIN_INPUT_X) == GPIO_PIN_SET) {
-     // Exit the loop immediately to stop movement
-     break;
-   }
+//   if (HAL_GPIO_ReadPin(ENDSTOPPER_PORT_INPUT_X, ENDSTOPPER_PIN_INPUT_X) == GPIO_PIN_SET) {
+//     // Exit the loop immediately to stop movement
+//     break;
+//   }
    // Standard pulse sequence
    HAL_GPIO_WritePin(STEP_PORT_X, STEP_PIN_X, GPIO_PIN_SET);
    microDelay(10);
@@ -133,10 +133,10 @@ void step_Y (int steps, uint8_t direction, uint16_t delay) {
   HAL_GPIO_WritePin(DIR_PORT_Y, DIR_PIN_Y, direction ? GPIO_PIN_SET : GPIO_PIN_RESET);
   for(int x=0; x<steps; x++) {
 	  // Check if the endstopper is triggered (1)
-	  if (HAL_GPIO_ReadPin(ENDSTOPPER_PORT_INPUT_Y, ENDSTOPPER_PIN_INPUT_Y) == GPIO_PIN_SET) {
-	  // Exit the loop immediately to stop movement
-	  break;
-	 }
+//	  if (HAL_GPIO_ReadPin(ENDSTOPPER_PORT_INPUT_Y, ENDSTOPPER_PIN_INPUT_Y) == GPIO_PIN_SET) {
+//	  // Exit the loop immediately to stop movement
+//	  break;
+//	 }
     HAL_GPIO_WritePin(STEP_PORT_Y, STEP_PIN_Y, GPIO_PIN_SET);
     microDelay(10); // Fixed short pulse
     HAL_GPIO_WritePin(STEP_PORT_Y, STEP_PIN_Y, GPIO_PIN_RESET);
@@ -174,12 +174,12 @@ void calibrate(void)
 
         if (x_state == GPIO_PIN_RESET)
         {
-            step_X(2, 0, 1000);
+            step_X(5, 0, 1000);
         }
 
         if (y_state == GPIO_PIN_RESET)
         {
-            step_Y(2, 0, 1000);
+            step_Y(5, 0, 1000);
         }
 
         HAL_Delay(10);
@@ -190,7 +190,14 @@ void calibrate(void)
 }
 
 void initial(void){
+	static uint8_t initialized = 0;
+	const int X_step = 1000;
+	const int Y_step = 550;
+	if (initialized) return;   // already initialized, do nothing
+	step_X(X_step, 1, 2000);
+	step_Y(Y_step, 1, 2000);
 
+	initialized = 1;
 }
 
 
@@ -248,30 +255,11 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-//    int y;
-//    for(y=0; y<50; y=y+1) // y times
-//    {
-//      step_X(1, 0, 10);
-//      step_Y(1, 0, 10);
-//
-//      OLED_ShowProgress((y + 1) * 100 / 50);
-//
-//      HAL_Delay(10);
-//    }
-//    // 2000 microsecond delay is much slower and has higher torque
-//	step_X(50, 1, 2000);
-//	step_Y(50, 1, 2000);
-//	HAL_Delay(1000);
-//	//step_EXTRUDE(1500, 1, 2000);
-//	HAL_Delay(1000);
-//	//step_EXTRUDE(1500, 0, 2000);
-    /* USER CODE END WHILE */
-
-    /* USER CODE BEGIN 3 */
-//	  OLED_ShowProgress(0);
 
 	  if(run == true){
 		  calibrate();
+		  HAL_Delay(1000);
+		  initial();
 	  }
 
 	  // Test row by row
