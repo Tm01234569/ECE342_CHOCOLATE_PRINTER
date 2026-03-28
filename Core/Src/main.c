@@ -18,8 +18,9 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-
 #include "image_data.h"
+#include <stdbool.h>
+
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -80,10 +81,10 @@ static void MX_I2C2_Init(void);
 #define MS3_PORT_X GPIOE
 #define MS3_PIN_X GPIO_PIN_11
 
-#define DIR_PIN_Y GPIO_PIN_12
-#define DIR_PORT_Y GPIOF
-#define STEP_PIN_Y GPIO_PIN_15
-#define STEP_PORT_Y GPIOD
+#define DIR_PIN_Y GPIO_PIN_6
+#define DIR_PORT_Y GPIOA
+#define STEP_PIN_Y GPIO_PIN_5
+#define STEP_PORT_Y GPIOA
 
 #define DIR_PIN_EXTRUDE GPIO_PIN_12
 #define DIR_PORT_EXTRUDE GPIOE
@@ -95,6 +96,8 @@ static void MX_I2C2_Init(void);
 
 #define ENDSTOPPER_PIN_INPUT_Y GPIO_PIN_15
 #define ENDSTOPPER_PORT_INPUT_Y GPIOE
+
+bool run = false;
 
 // Function to set servo angle
 void Set_Servo_Angle(TIM_HandleTypeDef *htim, uint32_t channel, uint8_t angle)
@@ -156,6 +159,42 @@ void step_EXTRUDE (int steps, uint8_t direction, uint16_t delay) {
   * @brief  The application entry point.
   * @retval int
   */
+
+void calibrate(void)
+{
+    static uint8_t calibrated = 0;
+    if (calibrated) return;   // already calibrated, do nothing
+
+    GPIO_PinState x_state, y_state;
+
+    do
+    {
+        x_state = HAL_GPIO_ReadPin(ENDSTOPPER_PORT_INPUT_X, ENDSTOPPER_PIN_INPUT_X);
+        y_state = HAL_GPIO_ReadPin(ENDSTOPPER_PORT_INPUT_Y, ENDSTOPPER_PIN_INPUT_Y);
+
+        if (x_state == GPIO_PIN_RESET)
+        {
+            step_X(2, 0, 1000);
+        }
+
+        if (y_state == GPIO_PIN_RESET)
+        {
+            step_Y(2, 0, 1000);
+        }
+
+        HAL_Delay(10);
+
+    } while (x_state == GPIO_PIN_RESET || y_state == GPIO_PIN_RESET);
+
+    calibrated = 1;   // mark calibration complete
+}
+
+void initial(void){
+
+}
+
+
+
 int main(void)
 {
 
@@ -226,50 +265,53 @@ int main(void)
 //	//step_EXTRUDE(1500, 1, 2000);
 //	HAL_Delay(1000);
 //	//step_EXTRUDE(1500, 0, 2000);
-//    /* USER CODE END WHILE */
-//
-//    /* USER CODE BEGIN 3 */
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
 //	  OLED_ShowProgress(0);
 
+	  if(run == true){
+		  calibrate();
+	  }
 
 	  // Test row by row
-	  for (int y = 0; y < IMAGE_HEIGHT; y++)
-	      {
-	          for (int x = 0; x < IMAGE_WIDTH; x++)
-	          {
-	              // Check current pixel
-	              if (image_data[y][x] == 1)
-	              {
-	                  step_EXTRUDE(5, 1, 20000);
-	              }
-
-	              // Move right, but not after the last pixel in the row
-	              if (x < IMAGE_WIDTH - 1)
-	              {
-	                  step_X(5, 0, 20000);   // 5 steps = 1 pixel in X
-	                  HAL_Delay(10);
-	              }
-	          }
-
-	          // If not the last row, return to left and move down
-	          if (y < IMAGE_HEIGHT - 1)
-	          {
-	              HAL_Delay(1000);
-
-	              // Return to left side
-	              step_X((IMAGE_WIDTH - 1) * 5, 1, 10000);
-	              HAL_Delay(500);
-
-	              // Move down by 1 pixel in Y
-	              step_Y(10, 0, 20000);
-	              HAL_Delay(500);
-	          }
-
-	          OLED_ShowProgress((y + 1) * 100 / IMAGE_HEIGHT);
-	      }
-
-	      HAL_Delay(1000);
-	      OLED_ShowProgress(0);
+//	  for (int y = 0; y < IMAGE_HEIGHT; y++)
+//	      {
+//	          for (int x = 0; x < IMAGE_WIDTH; x++)
+//	          {
+//	              // Check current pixel
+//	              if (image_data[y][x] == 1)
+//	              {
+//	                  step_EXTRUDE(5, 1, 20000);
+//	              }
+//
+//	              // Move right, but not after the last pixel in the row
+//	              if (x < IMAGE_WIDTH - 1)
+//	              {
+//	                  step_X(5, 0, 20000);   // 5 steps = 1 pixel in X
+//	                  HAL_Delay(10);
+//	              }
+//	          }
+//
+//	          // If not the last row, return to left and move down
+//	          if (y < IMAGE_HEIGHT - 1)
+//	          {
+//	              HAL_Delay(1000);
+//
+//	              // Return to left side
+//	              step_X((IMAGE_WIDTH - 1) * 5, 1, 10000);
+//	              HAL_Delay(500);
+//
+//	              // Move down by 1 pixel in Y
+//	              step_Y(10, 0, 20000);
+//	              HAL_Delay(500);
+//	          }
+//
+//	          OLED_ShowProgress((y + 1) * 100 / IMAGE_HEIGHT);
+//	      }
+//
+//	      HAL_Delay(1000);
+//	      OLED_ShowProgress(0);
   }
   /* USER CODE END 3 */
 }
@@ -629,6 +671,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(USB_OverCurrent_GPIO_Port, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
