@@ -1,7 +1,7 @@
 from PIL import Image
 
-TARGET_WIDTH = 50
-TARGET_HEIGHT = 50
+TARGET_WIDTH = 25
+TARGET_HEIGHT = 25
 
 img = Image.open("Image/image.png").convert("RGB")
 img = img.resize((TARGET_WIDTH, TARGET_HEIGHT), Image.Resampling.NEAREST)

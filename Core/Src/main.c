@@ -190,14 +190,65 @@ void calibrate(void)
 }
 
 void initial(void){
-	static uint8_t initialized = 0;
-	const int X_step = 1000;
+	const int X_step = 1010;
 	const int Y_step = 550;
+
+	static uint8_t initialized = 0;
 	if (initialized) return;   // already initialized, do nothing
 	step_X(X_step, 1, 2000);
 	step_Y(Y_step, 1, 2000);
 
 	initialized = 1;
+}
+
+
+void rowByRow(void){
+	// Test row by row
+	static uint8_t finish_printing = 0;
+
+	const int pixel_step = 18;
+	const int pixel_extrude = 10;
+
+	if (finish_printing) return;   // already initialized, do nothing
+
+
+		  for (int y = 0; y < IMAGE_HEIGHT; y++)
+		      {
+		          for (int x = 0; x < IMAGE_WIDTH; x++)
+		          {
+		              // Check current pixel
+		              if (image_data[y][x] == 0)
+		              {
+		                  step_EXTRUDE(pixel_extrude, 1, 10000);
+		                  HAL_Delay(100);
+		              }
+
+		              // Move right, but not after the last pixel in the row
+		              if (x < IMAGE_WIDTH - 1)
+		              {
+		                  step_X(pixel_step, 0, 3000);
+
+		              }
+		          }
+
+		          // If not the last row, return to left and move down
+		          if (y < IMAGE_HEIGHT - 1)
+		          {
+		              HAL_Delay(500);
+
+		              // Return to left side
+		              step_X((IMAGE_WIDTH - 1) * pixel_step, 1, 1000);
+		              HAL_Delay(500);
+
+		              // Move down by 1 pixel in Y
+		              step_Y(pixel_step, 0, 20000);
+		              HAL_Delay(500);
+		          }
+
+		          OLED_ShowProgress((y + 1) * 100 / IMAGE_HEIGHT);
+		      }
+
+		  finish_printing = 1;
 }
 
 
@@ -260,46 +311,11 @@ int main(void)
 		  calibrate();
 		  HAL_Delay(1000);
 		  initial();
+		  HAL_Delay(1500);
+		  rowByRow();
 	  }
 
-	  // Test row by row
-//	  for (int y = 0; y < IMAGE_HEIGHT; y++)
-//	      {
-//	          for (int x = 0; x < IMAGE_WIDTH; x++)
-//	          {
-//	              // Check current pixel
-//	              if (image_data[y][x] == 1)
-//	              {
-//	                  step_EXTRUDE(5, 1, 20000);
-//	              }
-//
-//	              // Move right, but not after the last pixel in the row
-//	              if (x < IMAGE_WIDTH - 1)
-//	              {
-//	                  step_X(5, 0, 20000);   // 5 steps = 1 pixel in X
-//	                  HAL_Delay(10);
-//	              }
-//	          }
-//
-//	          // If not the last row, return to left and move down
-//	          if (y < IMAGE_HEIGHT - 1)
-//	          {
-//	              HAL_Delay(1000);
-//
-//	              // Return to left side
-//	              step_X((IMAGE_WIDTH - 1) * 5, 1, 10000);
-//	              HAL_Delay(500);
-//
-//	              // Move down by 1 pixel in Y
-//	              step_Y(10, 0, 20000);
-//	              HAL_Delay(500);
-//	          }
-//
-//	          OLED_ShowProgress((y + 1) * 100 / IMAGE_HEIGHT);
-//	      }
-//
-//	      HAL_Delay(1000);
-//	      OLED_ShowProgress(0);
+
   }
   /* USER CODE END 3 */
 }
