@@ -202,53 +202,118 @@ void initial(void){
 }
 
 
-void rowByRow(void){
-	// Test row by row
-	static uint8_t finish_printing = 0;
+//void rowByRow(void){
+//	// Test row by row
+//	static uint8_t finish_printing = 0;
+//
+//	const int pixel_step = 18;
+//	const int pixel_extrude = 10;
+//
+//	if (finish_printing) return;   // already initialized, do nothing
+//
+//
+//		  for (int y = 0; y < IMAGE_HEIGHT; y++)
+//		      {
+//		          for (int x = 0; x < IMAGE_WIDTH; x++)
+//		          {
+//		              // Check current pixel
+//		              if (image_data[y][x] == 0)
+//		              {
+//		                  step_EXTRUDE(pixel_extrude, 1, 10000);
+//		                  HAL_Delay(100);
+//		              }
+//
+//		              // Move right, but not after the last pixel in the row
+//		              if (x < IMAGE_WIDTH - 1)
+//		              {
+//		                  step_X(pixel_step, 0, 3000);
+//
+//		              }
+//		          }
+//
+//		          // If not the last row, return to left and move down
+//		          if (y < IMAGE_HEIGHT - 1)
+//		          {
+//		              HAL_Delay(500);
+//
+//		              // Return to left side
+//		              step_X((IMAGE_WIDTH - 1) * pixel_step, 1, 1000);
+//		              HAL_Delay(500);
+//
+//		              // Move down by 1 pixel in Y
+//		              step_Y(pixel_step, 0, 20000);
+//		              HAL_Delay(500);
+//		          }
+//
+//		          OLED_ShowProgress((y + 1) * 100 / IMAGE_HEIGHT);
+//		      }
+//
+//		  finish_printing = 1;
+//}
 
-	const int pixel_step = 18;
-	const int pixel_extrude = 10;
 
-	if (finish_printing) return;   // already initialized, do nothing
+void rowByRow_RLE(void)
+{
+    static uint8_t finish_printing = 0;
 
+    const int pixel_step = 18;
+    const int pixel_extrude = 2;
 
-		  for (int y = 0; y < IMAGE_HEIGHT; y++)
-		      {
-		          for (int x = 0; x < IMAGE_WIDTH; x++)
-		          {
-		              // Check current pixel
-		              if (image_data[y][x] == 0)
-		              {
-		                  step_EXTRUDE(pixel_extrude, 1, 10000);
-		                  HAL_Delay(100);
-		              }
+    if (finish_printing) return;
 
-		              // Move right, but not after the last pixel in the row
-		              if (x < IMAGE_WIDTH - 1)
-		              {
-		                  step_X(pixel_step, 0, 3000);
+    for (int y = 0; y < IMAGE_HEIGHT; y++)
+    {
+        int current_x = 0;
 
-		              }
-		          }
+        for (int r = 0; r < run_counts[y]; r++)
+        {
+            int start = image_runs[y][r].start;
+            int length = image_runs[y][r].length;
 
-		          // If not the last row, return to left and move down
-		          if (y < IMAGE_HEIGHT - 1)
-		          {
-		              HAL_Delay(500);
+            // move to start of this run
+            int move_pixels = start - current_x;
+            if (move_pixels > 0)
+            {
+                step_X(move_pixels * pixel_step, 0, 3000);
+                HAL_Delay(100);
+            }
 
-		              // Return to left side
-		              step_X((IMAGE_WIDTH - 1) * pixel_step, 1, 1000);
-		              HAL_Delay(500);
+            // print this run
+            for (int i = 0; i < length; i++)
+            {
+                step_EXTRUDE(pixel_extrude, 1, 10000);
 
-		              // Move down by 1 pixel in Y
-		              step_Y(pixel_step, 0, 20000);
-		              HAL_Delay(500);
-		          }
+                if (i < length - 1)
+                {
+                    step_X(pixel_step, 0, 5000);
+                }
+                HAL_Delay(50);
+            }
 
-		          OLED_ShowProgress((y + 1) * 100 / IMAGE_HEIGHT);
-		      }
+            // update current position
+            current_x = start + length - 1;
+        }
 
-		  finish_printing = 1;
+        // return to left side and move down
+        if (y < IMAGE_HEIGHT - 1)
+        {
+            HAL_Delay(500);
+
+            if (current_x > 0)
+            {
+                step_X(current_x * pixel_step, 1, 1000);
+            }
+
+            HAL_Delay(500);
+
+            step_Y(pixel_step, 0, 20000);
+            HAL_Delay(500);
+        }
+
+        OLED_ShowProgress((y + 1) * 100 / IMAGE_HEIGHT);
+    }
+
+    finish_printing = 1;
 }
 
 
@@ -312,7 +377,7 @@ int main(void)
 		  HAL_Delay(1000);
 		  initial();
 		  HAL_Delay(1500);
-		  rowByRow();
+		  rowByRow_RLE();
 	  }
 
 
