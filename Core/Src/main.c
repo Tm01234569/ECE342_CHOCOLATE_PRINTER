@@ -308,11 +308,6 @@ void finish(void)
 
     GPIO_PinState x_state, y_state;
 
-    x_state = HAL_GPIO_ReadPin(ENDSTOPPER_PORT_INPUT_X, ENDSTOPPER_PIN_INPUT_X);
-    y_state = HAL_GPIO_ReadPin(ENDSTOPPER_PORT_INPUT_Y, ENDSTOPPER_PIN_INPUT_Y);
-
-
-    OLED_ShowCalibration(x_state, y_state);
 
     do
     {

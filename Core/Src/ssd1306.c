@@ -323,8 +323,8 @@ void OLED_ShowEndScreen(void)
 {
     SSD1306_Fill(SSD1306_COLOR_BLACK);
 
-    OLED_DrawText(10, 18, "Finished Printing!", &Font_7x10);
-    //OLED_DrawText(36, 34, "to start", &Font_7x10);
+    OLED_DrawText(22, 18, "Finished", &Font_7x10);
+    OLED_DrawText(36, 34, "Printing!", &Font_7x10);
 
     SSD1306_UpdateScreen();
 }
