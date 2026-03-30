@@ -167,10 +167,22 @@ void calibrate(void)
 
     GPIO_PinState x_state, y_state;
 
+    GPIO_PinState last_x_state = GPIO_PIN_RESET;
+    GPIO_PinState last_y_state = GPIO_PIN_RESET;
+
+    OLED_ShowCalibration(last_x_state, last_y_state);
+
     do
     {
-        x_state = HAL_GPIO_ReadPin(ENDSTOPPER_PORT_INPUT_X, ENDSTOPPER_PIN_INPUT_X);
+    	x_state = HAL_GPIO_ReadPin(ENDSTOPPER_PORT_INPUT_X, ENDSTOPPER_PIN_INPUT_X);
         y_state = HAL_GPIO_ReadPin(ENDSTOPPER_PORT_INPUT_Y, ENDSTOPPER_PIN_INPUT_Y);
+
+        if (x_state != last_x_state || y_state != last_y_state)
+        {
+        	OLED_ShowCalibration(x_state, y_state);
+        	last_x_state = x_state;
+        	last_y_state = y_state;
+        }
 
         if (x_state == GPIO_PIN_RESET)
         {
@@ -201,113 +213,85 @@ void initial(void){
 	initialized = 1;
 }
 
+void test(void){
+	const int X_test = 950;
+		const int Y_test = 400;
 
-//void rowByRow(void){
-//	// Test row by row
-//	static uint8_t finish_printing = 0;
-//
-//	const int pixel_step = 18;
-//	const int pixel_extrude = 10;
-//
-//	if (finish_printing) return;   // already initialized, do nothing
-//
-//
-//		  for (int y = 0; y < IMAGE_HEIGHT; y++)
-//		      {
-//		          for (int x = 0; x < IMAGE_WIDTH; x++)
-//		          {
-//		              // Check current pixel
-//		              if (image_data[y][x] == 0)
-//		              {
-//		                  step_EXTRUDE(pixel_extrude, 1, 10000);
-//		                  HAL_Delay(100);
-//		              }
-//
-//		              // Move right, but not after the last pixel in the row
-//		              if (x < IMAGE_WIDTH - 1)
-//		              {
-//		                  step_X(pixel_step, 0, 3000);
-//
-//		              }
-//		          }
-//
-//		          // If not the last row, return to left and move down
-//		          if (y < IMAGE_HEIGHT - 1)
-//		          {
-//		              HAL_Delay(500);
-//
-//		              // Return to left side
-//		              step_X((IMAGE_WIDTH - 1) * pixel_step, 1, 1000);
-//		              HAL_Delay(500);
-//
-//		              // Move down by 1 pixel in Y
-//		              step_Y(pixel_step, 0, 20000);
-//		              HAL_Delay(500);
-//		          }
-//
-//		          OLED_ShowProgress((y + 1) * 100 / IMAGE_HEIGHT);
-//		      }
-//
-//		  finish_printing = 1;
-//}
+		static uint8_t tested = 0;
+		if (tested) return;   // already initialized, do nothing
+		step_X(X_test, 0, 2000);
+		step_Y(Y_test, 0, 2000);
+
+		tested = 1;
+}
+
 
 
 void rowByRow_RLE(void)
 {
     static uint8_t finish_printing = 0;
 
-    const int pixel_step = 18;
-    const int pixel_extrude = 2;
+    const int pixel_step = 38;
+    const int pixel_extrude = 5;
 
     if (finish_printing) return;
 
     for (int y = 0; y < IMAGE_HEIGHT; y++)
     {
         int current_x = 0;
+        int row_x_moves = 0;
 
         for (int r = 0; r < run_counts[y]; r++)
         {
-            int start = image_runs[y][r].start;
+            int start  = image_runs[y][r].start;
             int length = image_runs[y][r].length;
 
-            // move to start of this run
             int move_pixels = start - current_x;
             if (move_pixels > 0)
             {
+            	if (r > 0)
+            	{
+            		HAL_Delay(3000);   // only between runs, not before first run
+            	}
                 step_X(move_pixels * pixel_step, 0, 3000);
+                row_x_moves += move_pixels * pixel_step;
+                current_x = start;
                 HAL_Delay(100);
             }
 
-            // print this run
             for (int i = 0; i < length; i++)
             {
                 step_EXTRUDE(pixel_extrude, 1, 10000);
+                HAL_Delay(250); // Delay between extruding
 
                 if (i < length - 1)
                 {
                     step_X(pixel_step, 0, 5000);
+                    row_x_moves += pixel_step;
+                    current_x++;
                 }
-                HAL_Delay(50);
-            }
 
-            // update current position
-            current_x = start + length - 1;
+
+            }
         }
 
-        // return to left side and move down
+        if (row_x_moves > 0)
+        {
+            HAL_Delay(3000);
+        }
+
         if (y < IMAGE_HEIGHT - 1)
         {
             HAL_Delay(500);
 
-            if (current_x > 0)
+            if (row_x_moves > 0)
             {
-                step_X(current_x * pixel_step, 1, 1000);
+                step_X(row_x_moves, 1, 1000);
             }
 
-            HAL_Delay(500);
-
-            step_Y(pixel_step, 0, 20000);
-            HAL_Delay(500);
+            HAL_Delay(100);
+            step_Y(16, 0, 20000);
+            HAL_Delay(100);
         }
 
         OLED_ShowProgress((y + 1) * 100 / IMAGE_HEIGHT);
@@ -315,6 +299,57 @@ void rowByRow_RLE(void)
 
     finish_printing = 1;
 }
+
+
+void finish(void)
+{
+    static uint8_t finished = 0;
+    if (finished) return;   // already calibrated, do nothing
+
+    GPIO_PinState x_state, y_state;
+
+    x_state = HAL_GPIO_ReadPin(ENDSTOPPER_PORT_INPUT_X, ENDSTOPPER_PIN_INPUT_X);
+    y_state = HAL_GPIO_ReadPin(ENDSTOPPER_PORT_INPUT_Y, ENDSTOPPER_PIN_INPUT_Y);
+
+
+    OLED_ShowCalibration(x_state, y_state);
+
+    do
+    {
+        x_state = HAL_GPIO_ReadPin(ENDSTOPPER_PORT_INPUT_X, ENDSTOPPER_PIN_INPUT_X);
+        y_state = HAL_GPIO_ReadPin(ENDSTOPPER_PORT_INPUT_Y, ENDSTOPPER_PIN_INPUT_Y);
+
+
+
+        if (x_state == GPIO_PIN_RESET)
+        {
+            step_X(5, 0, 1000);
+        }
+
+        if (y_state == GPIO_PIN_RESET)
+        {
+            step_Y(5, 0, 1000);
+        }
+
+        HAL_Delay(10);
+
+    } while (x_state == GPIO_PIN_RESET || y_state == GPIO_PIN_RESET);
+
+    finishX();
+
+    finished = 1;   // mark calibration complete
+}
+
+void finishX(void){
+	static uint8_t moved = 0;
+	if (moved) return;   // already calibrated, do nothing
+
+	step_X(1150, 1, 2000);
+
+	moved = 1;
+}
+
+
 
 
 
@@ -366,6 +401,9 @@ int main(void)
     // Give the driver a tiny moment to wake up
     HAL_Delay(10);
   /* USER CODE END 2 */
+    SSD1306_Init();
+
+    OLED_ShowStartScreen();
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
@@ -376,8 +414,11 @@ int main(void)
 		  calibrate();
 		  HAL_Delay(1000);
 		  initial();
-		  HAL_Delay(1500);
+		  HAL_Delay(1000);
+		  //test
 		  rowByRow_RLE();
+		  finish();
+		  OLED_ShowEndScreen();
 	  }
 
 

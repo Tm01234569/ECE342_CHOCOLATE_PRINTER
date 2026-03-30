@@ -12,3 +12,6 @@
 ../Core/Src/ssd1306.c:231:6:OLED_FillRect	3
 ../Core/Src/ssd1306.c:242:6:OLED_DrawText	2
 ../Core/Src/ssd1306.c:252:6:OLED_ShowProgress	3
+../Core/Src/ssd1306.c:286:6:OLED_ShowCalibration	3
+../Core/Src/ssd1306.c:312:6:OLED_ShowStartScreen	1
+../Core/Src/ssd1306.c:322:6:OLED_ShowEndScreen	1

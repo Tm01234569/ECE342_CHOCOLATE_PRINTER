@@ -282,3 +282,51 @@ void OLED_ShowProgress(uint8_t percent)
 
     SSD1306_UpdateScreen();
 }
+
+void OLED_ShowCalibration(GPIO_PinState x_state, GPIO_PinState y_state)
+{
+    SSD1306_Fill(SSD1306_COLOR_BLACK);
+
+    // Title
+    OLED_DrawText(18, 8, "Calibrating...", &Font_7x10);
+
+    // X axis status
+    OLED_DrawText(10, 28, "X Axis:", &Font_7x10);
+
+    if (x_state == GPIO_PIN_SET)
+        OLED_DrawText(70, 28, "Done", &Font_7x10);
+    else
+        OLED_DrawText(70, 28, "Homing", &Font_7x10);
+
+    // Y axis status
+    OLED_DrawText(10, 42, "Y Axis:", &Font_7x10);
+
+    if (y_state == GPIO_PIN_SET)
+        OLED_DrawText(70, 42, "Done", &Font_7x10);
+    else
+        OLED_DrawText(70, 42, "Homing", &Font_7x10);
+
+    SSD1306_UpdateScreen();
+}
+
+void OLED_ShowStartScreen(void)
+{
+    SSD1306_Fill(SSD1306_COLOR_BLACK);
+
+    OLED_DrawText(22, 18, "Press button", &Font_7x10);
+    OLED_DrawText(36, 34, "to start", &Font_7x10);
+
+    SSD1306_UpdateScreen();
+}
+
+void OLED_ShowEndScreen(void)
+{
+    SSD1306_Fill(SSD1306_COLOR_BLACK);
+
+    OLED_DrawText(10, 18, "Finished Printing!", &Font_7x10);
+    //OLED_DrawText(36, 34, "to start", &Font_7x10);
+
+    SSD1306_UpdateScreen();
+}
+
+
