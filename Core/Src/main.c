@@ -15,10 +15,22 @@
   *
   ******************************************************************************
   */
+
+/*
+ * SSD1306 Skeleton Code uses ECE342 Lab Code:
+ *
+ * ssd1306.c
+ * fonts.h
+ * ssd1306.h
+ *
+ * Author: ECE342 Labs
+ *
+ */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "image_data.h"
+#include "imageConvert.h"
 #include <stdbool.h>
 
 
@@ -116,12 +128,6 @@ void step_X (int steps, uint8_t direction, uint16_t delay) {
  // Set the motor direction
  HAL_GPIO_WritePin(DIR_PORT_X, DIR_PIN_X, direction ? GPIO_PIN_SET : GPIO_PIN_RESET);
  for(int x = 0; x < steps; x++) {
-   // Check if the endstopper is triggered (1)
-//   if (HAL_GPIO_ReadPin(ENDSTOPPER_PORT_INPUT_X, ENDSTOPPER_PIN_INPUT_X) == GPIO_PIN_SET) {
-//     // Exit the loop immediately to stop movement
-//     break;
-//   }
-   // Standard pulse sequence
    HAL_GPIO_WritePin(STEP_PORT_X, STEP_PIN_X, GPIO_PIN_SET);
    microDelay(10);
    HAL_GPIO_WritePin(STEP_PORT_X, STEP_PIN_X, GPIO_PIN_RESET);
@@ -132,11 +138,6 @@ void step_X (int steps, uint8_t direction, uint16_t delay) {
 void step_Y (int steps, uint8_t direction, uint16_t delay) {
   HAL_GPIO_WritePin(DIR_PORT_Y, DIR_PIN_Y, direction ? GPIO_PIN_SET : GPIO_PIN_RESET);
   for(int x=0; x<steps; x++) {
-	  // Check if the endstopper is triggered (1)
-//	  if (HAL_GPIO_ReadPin(ENDSTOPPER_PORT_INPUT_Y, ENDSTOPPER_PIN_INPUT_Y) == GPIO_PIN_SET) {
-//	  // Exit the loop immediately to stop movement
-//	  break;
-//	 }
     HAL_GPIO_WritePin(STEP_PORT_Y, STEP_PIN_Y, GPIO_PIN_SET);
     microDelay(10); // Fixed short pulse
     HAL_GPIO_WritePin(STEP_PORT_Y, STEP_PIN_Y, GPIO_PIN_RESET);
@@ -160,7 +161,7 @@ void step_EXTRUDE (int steps, uint8_t direction, uint16_t delay) {
   * @retval int
   */
 
-void calibrate(void)
+void calibrate(void) // Calibrate motors to end stopper position
 {
     static uint8_t calibrated = 0;
     if (calibrated) return;   // already calibrated, do nothing
@@ -201,7 +202,7 @@ void calibrate(void)
     calibrated = 1;   // mark calibration complete
 }
 
-void initial(void){
+void initial(void){ // Initialize nozzle position
 	const int X_step = 1010;
 	const int Y_step = 550;
 
@@ -213,7 +214,7 @@ void initial(void){
 	initialized = 1;
 }
 
-void test(void){
+void test(void){ // To eyeball how many steps
 	const int X_test = 950;
 		const int Y_test = 400;
 
@@ -301,7 +302,7 @@ void rowByRow_RLE(void)
 }
 
 
-void finish(void)
+void finish(void) // Move plate out of the way
 {
     static uint8_t finished = 0;
     if (finished) return;   // already calibrated, do nothing
@@ -410,7 +411,6 @@ int main(void)
 		  HAL_Delay(1000);
 		  initial();
 		  HAL_Delay(1000);
-		  //test
 		  rowByRow_RLE();
 		  finish();
 		  OLED_ShowEndScreen();

@@ -8,8 +8,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": true,
-      "cwd": "c:/UOFT/Y3 Winter/ECE342/Project/CHOCOLATE_PRINTER/Test Project/ECE342_CHOCOLATE_PRINTER/Core/Image",
-      "program": "c:/UOFT/Y3 Winter/ECE342/Project/CHOCOLATE_PRINTER/Test Project/ECE342_CHOCOLATE_PRINTER/Core/Image/build/Debug/outDebug",
+      "cwd": ".",
+      "program": "build/Debug/outDebug",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [
